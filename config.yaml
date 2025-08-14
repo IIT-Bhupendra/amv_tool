@@ -1,0 +1,29 @@
+database_connection:
+  uri: "mongodb://localhost:27017"
+  database: "your_database"
+
+collections:
+  users_collection:
+    expected_count: 20000000
+    required_fields:
+      - user_id
+      - email
+      - profile.name
+    data_types:
+      user_id: string
+      email: string
+      profile.name: string
+      profile.age: int
+      balance: float
+    categories:
+      status: [active, inactive, suspended]
+    numeric_ranges:
+      balance:
+        min: 0
+        max: 1000000
+      profile.age:
+        min: 18
+        max: 120
+    keywords:
+      balance: ['$']
+      interest_rate: ['%']

@@ -1,0 +1,18 @@
+# Virtual environment
+amv_env/
+venv/
+*.env
+
+# Pytest
+.pytest_cache/
+report.html
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# IDEs and editors
+.vscode/
+.idea/
