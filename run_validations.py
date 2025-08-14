@@ -1,28 +1,97 @@
 import pytest
 from mongo_validator import MongoValidator
-import json
-from datetime import datetime
 
-def test_mongo_validations():
-    """
-    Pytest function to run validations and generate HTML report
-    """
-    validator = MongoValidator()
-    
-    results = validator.run_validations()
-    
-    # Save detailed results to JSON file
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    with open(f'validation_results_{timestamp}.json', 'w') as f:
-        json.dump(results, f, indent=2)
-    
-    # Assert for pytest to generate report
-    failed_collections = [r for r in results['results'] if r['status'] == 'Failed']
-    if failed_collections:
-        error_messages = []
-        for collection in failed_collections:
-            error_messages.extend(collection['errors'])
-        pytest.fail("\n".join(error_messages))
+# Create a single validator instance to be used by all tests
+validator = MongoValidator()
+rules = validator.rules
+
+# A list to hold all the test cases
+test_cases = []
+
+# Generate test cases for each collection and rule
+for collection_name, collection_rules in rules.get('collections', {}).items():
+    # Test for collection existence
+    test_cases.append(
+        pytest.param(
+            collection_name,
+            'check_collection_existence',
+            (),
+            id=f"test_{collection_name}_existence"
+        )
+    )
+
+    # Test for expected count
+    if 'expected_count' in collection_rules:
+        test_cases.append(
+            pytest.param(
+                collection_name,
+                'validate_expected_count',
+                (collection_rules['expected_count'],),
+                id=f"test_{collection_name}_expected_count"
+            )
+        )
+
+    # Test for required fields
+    if 'required_fields' in collection_rules:
+        test_cases.append(
+            pytest.param(
+                collection_name,
+                'validate_required_fields',
+                (collection_rules['required_fields'],),
+                id=f"test_{collection_name}_required_fields"
+            )
+        )
+
+    # Test for data types
+    if 'data_types' in collection_rules:
+        test_cases.append(
+            pytest.param(
+                collection_name,
+                'validate_data_types',
+                (collection_rules['data_types'],),
+                id=f"test_{collection_name}_data_types"
+            )
+        )
+
+    # Test for categories
+    if 'categories' in collection_rules:
+        test_cases.append(
+            pytest.param(
+                collection_name,
+                'validate_categories',
+                (collection_rules['categories'],),
+                id=f"test_{collection_name}_categories"
+            )
+        )
+
+    # Test for numeric ranges
+    if 'numeric_ranges' in collection_rules:
+        test_cases.append(
+            pytest.param(
+                collection_name,
+                'validate_numeric_ranges',
+                (collection_rules['numeric_ranges'],),
+                id=f"test_{collection_name}_numeric_ranges"
+            )
+        )
+
+    # Test for keywords
+    if 'keywords' in collection_rules:
+        test_cases.append(
+            pytest.param(
+                collection_name,
+                'validate_keywords',
+                (collection_rules['keywords'],),
+                id=f"test_{collection_name}_keywords"
+            )
+        )
+
+# The main test function, parametrized with all the test cases
+@pytest.mark.parametrize("collection_name,method_name,args", test_cases)
+def test_validation(collection_name, method_name, args):
+    """Dynamically runs all validation tests."""
+    validation_method = getattr(validator, method_name)
+    validation_method(collection_name, *args)
 
 if __name__ == "__main__":
-    pytest.main([__file__, '--html=validation_report.html', '--self-contained-html'])
+    pytest.main(['-v', __file__, '--html=validation_report.html', '--self-contained-html'])
